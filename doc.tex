@@ -1,0 +1,485 @@
+\documentclass{mcmthesis}
+\mcmsetup{CTeX = false, 
+	tcn = 2212242, problem = C,   % 修改控制号和选题号
+	sheet = true, titleinsheet = true, keywordsinsheet = true,
+	titlepage = false, abstract = true}
+\usepackage{palatino}
+\usepackage{lipsum}
+\usepackage{float}
+\usepackage{amsmath}  % 此处引入数学公式的包
+\usepackage{graphicx} % 用于插入图片
+
+% 控制页 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 论文标题
+\title{Price Prediction and Quantitative Trading Strategy Based on LSTM Neural Network}  % 修改标题
+\date{\today}
+
+\begin{document}
+	\begin{abstract}
+		% 摘要部分
+		\ \ \ Quantitative trading is based on professional financial knowledge. With the help of statistical and mathematical models and quantitative investment algorithms are used to trade to obtain an excess return ratio. This article uses the United States from September 11, 2016, to 2021. With the data of the five-year trading period on September 10, 2021, we need to develop a price prediction model and investment planning model to start operation with the initial \$1000 and need to estimate the investment value obtained on September 10, 2021. 
+		
+		First, we need to normalize the data.Then, We established a price prediction model based on LSTM neural network and a price prediction model based on the gray prediction model.By comparing the price forecast model based on LSTM is better.Next, use the dynamic programming model to plan the investment. We take the changes in gold and bitcoin transactions in the next few days as the decision variables and take the highest Sharpe ratio on the third day in the future as the objective function. The constraints of the planning model are: After the transaction, each amount cannot be negative and gold transactions cannot be carried out for some time. Then we establish a planning model to find the optimal investment plan at this time.Using the variance of the predicted value in the next few days as a description of the risk, the Risk and return are given different weights as objective functions to describe the investment strategies of people with different personalities. Later, in order to speed up the convergence of the planning model, we added particle swarm optimization for optimization.
+		
+		Then, the daily specific investment plans of the three-character investors were obtained and given——the total investment value of the aggressive and bold investors was \$20370265, the total investment value of the stable conservative investors was \$1347.89, and the total investment value of an investor in the middle is \$4356.52.
+		
+		Finally, we tested the sensitivity of the previous model. We found that if the investment plan is disturbed, the objective function will no longer be the maximum value, which means that it does not meet the psychological expectations of investors. Therefore, the plan we gave is an optimal solution. Then, a series of changes are made to the transaction fee, and it is found that as the transaction fee increases, the number of large-value transactions of gold and Bitcoin decreases significantly, and the final value decreases. Lower, the number of large-value transactions in gold and bitcoin increased significantly, and the final value rose. Thus, our conclusion is proved again.
+		
+		
+		
+		% 关键词
+		\begin{keywords}  
+			LSTM neural network;\  Dynamic programming;\ Grey prediction model;\ Quantitative transaction;\ Price forecast
+		\end{keywords}
+	\end{abstract}
+	
+	% 目录页 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	\maketitle         % 控制序列
+	\tableofcontents   % 生成目录
+	\newpage
+	
+	% 基础用法 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	
+	% 标题 -----------------------------------------
+	\section{Introduction}
+	\subsection{Background}
+	%\subsubsection{This is a subsubsection}
+	\paragraph{\ \ \ The term investment has several related meanings in finance and economy. It involves the accumulation of property in order to obtain benefits in the future. Gold has long been an investment tool. It has high value and is an independent resource, which is not limited to any country or trade market,It has no involvement with the government or the company. Therefore, investing in gold can usually help investors avoid problems that may occur in the economic environment. Moreover, gold investment is the investment project with the lightest tax burden in the world. Gold investment specifically refers to the purchase of gold products to achieve the purpose of property preservation, appreciation and profit. The rise of virtual currency provides investors with new investment channels. Bitcoin is an open source code based on decentralization, adopting point-to-point network and consensus initiative,
+		Cryptocurrency with blockchain as the underlying technology. Quantitative strategy refers to the use of computers as tools, with the help of mathematical models and statistical algorithms, transaction methods, through a set of fixed logic to analyze, judge and make decisions, and obtain excess returns. Quantitative strategy can be implemented automatically or manually. In this topic, let's stand from the perspective of an investor, invest bitcoin and gold with initial funds, and experience the stimulation and thrill of being a trader.} %\\ % 换行符
+	
+	
+	\subsection{Restatement of the Problem}
+	% 无序符号----------------------------------------
+	
+	\begin{itemize}
+		\item Develop a model that gives the best daily trading strategy based only on price data up 
+		to that day. How much is the initial  \$1000 investment worth on 9/10/2021 using your 
+		model and strategy?
+		\item Prove that your model provides the best strategy.
+		\item Determine how sensitive the strategy is to transaction costs.How do transaction costs
+		affect the strategy and results?
+		\item Communicate your strategy, model, and results to the trader in a memorandum of at most 
+		two pages.
+	\end{itemize}
+	
+	\section{Assumptions and Justifications}
+	\paragraph{\ \ \ To simplify our problems,we made the following basic assumptions,each of which is adequately justified.}
+	\paragraph{\ \ \ (1)Suppose we know the price of gold or bitcoin until day N when trading on day N, and buy at this price, but we should calculate the income from day N+1.}
+	\paragraph{\ \ \ (2)It is assumed that the cash held will increase by 2\% at the current fixed annual interest rate.}
+	\paragraph{\ \ \ (3)It is assumed that the transaction rates of gold and bitcoin are settled on the same day and generate revenue from the next day.}
+	
+	
+	
+	
+	
+	
+	
+	
+	\section{Notation}
+		\begin{tabular}{ll}
+		\hline
+		symbols&descriptions\\
+		\hline
+		$f_{t}$&forget gate\\
+		$i_{t}$&input gate\\
+		$o_{t}$&output gate\\
+		$C_{t}$&cell gate\\
+		$x^{(1)}_{i}$&the initial data of grey model,which consists of \  $x^{(0)}_{i}(1),x^{(0)}_{i}(2),...,x^{(0)}_{i}(n)$\\
+		$B$& the mean matrix\\
+		$\sigma$& the sigmoid function\\
+		$Y_{m}$& the constant vectors\\
+		$a_{i}$&the development coefficient\\
+		$u_{i}$&the grey action\\
+		$R^{2} \ error$&prediction error\\
+		$SR_{p}$&sharpe rate, a rate which measures the return of assets after adjusting the risk and is the price display of unit risk\\
+		$E(r_{p})$& the expected rate of return on portfolio p\\
+		$\sigma_{p}$& the standard deviation of the rate on portfolio p\\
+		$r_{f}$& the rate of return of the risk-free asset\\
+		$c_{k}$& the proportion of the equivalent value of cash held in the total assets held on day \ $k$\\
+		$f_{k}$& the proportion of the equivalent value of gold held in the total assets held on day \ $k$\\
+		$b_{k}$& the proportion of the equivalent value of bitcoin held in the total assets held on day \ $k$\\
+		$\bigtriangleup G_{k} $ & the Variation in the proportion of gold on day \ $k$\\
+		$\bigtriangleup B_{k} $ & the Variation in the proportion of bitcoin on day \ $k$\\
+		$\overline{G_{k}}$& the increase of gold on day\ $k$\\
+		$\overline{B_{k}}$& the increase of bitcoin on day\ $k$\\
+		$a\_gold,a\_bit$&	the ratio of fees between gold and bitcoin\\
+		$g\_tans\_times$& the number of changes in gold transactions\\
+		$bit\_trans\_times$& the number of changes in bitcoin transactions\\
+		\hline
+	\end{tabular}
+	
+	\section{Analysis and Modelling}\cite{ML}
+	\subsection{Overall problem analysis}
+	\paragraph{\ \ \ We divide the whole trading strategy into two parts.They are the part of prediction and the part of investment planning.
+		The first part is to predict the price in the next few days according to the price data of gold or bitcoin until today.
+		The second part is to decide today's investment strategy according to the prediction results
+		In the first one,We compared several statistical models and machine learning models. We always decided 
+		to use grey prediction and LSTM neural network to predict respectively, 
+		and finally compared the effect to get a better prediction model.We take the past gold or bitcoin prices as a training set for training, 
+		and constantly predict their prices in the next few days.In the second part, we try to use the idea of 
+		dynamic programming,we use the prediction data obtained in the first part and combine the Sharpe Ratio
+		to complete the planning model. In order to accelerate the convergence speed, we also use intelligent 
+		optimization algorithm such as particle swarm optimization, simulated annealing.}
+	
+	
+	\subsection{Price forecasting model based on LSTM or GREY MODEL}
+	\subsubsection{Analysis of price forecasting}
+	\paragraph{\ \ \ Since the birth of the investment market, people have been using various data models, statistical models, machine learning and data mining to predict the future trend of stock prices,
+		resulting in huge profits.
+		There are generally two types of forecasting methods for financial time series of stock prices, one is a financial time series forecasting model based on statistical methods, and the other is a financial time series forecasting model based on machine learning algorithms.}
+	\paragraph{\ \ \ Among the categories of statistical methods, the differential integrated moving average autoregressive model (ARIMA) and the generalized autoregressive conditional heteroskedasticity model (GARCH) are the most widely accepted, but the primary premise of these methods is the linearity of the variable financial time series. It is assumed that the main tasks of grey forecasting research are analysis, modeling, forecasting, decision-making and control. According to the grey theory proposed by Professor Deng Julong in the 1980s, its typical grey prediction models (GREY MODEL) are GM (1,1) model and GM (1,N) model. However, in practical research, the research on one impact factor often needs to consider multiple other related factors, so the application of the gray GM (1,N) model is more extensive.}
+	\paragraph{\ \ \ However, the financial time series is very complex in nature. The financial time series is generated in people's economic and financial activities, and there will naturally be obvious disturbances in the data, which makes the financial time series not meet the assumptions of linearity and stationarity. , the traditional statistical methods are often not effective in the actual application of the financial market. At the same time, machine learning algorithms, which are widely used in financial time series, have been proven to have better forecasting effects. Among them, RNN has the problem of long dependence in the actual application process, and as one of the variants of the recurrent neural network RNN, LSTM effectively solves the long dependence problem of RNN, and is used in problems such as image recognition, speech recognition and time series. Have a good performance. Therefore, considering the above considerations, we use the LSTM neural network for prediction.}
+	\subsubsection{Data Preprocessing}
+	\paragraph{\ \ \ Since we cannot use the data given in the non-title for investment planning, we only use some data before 2016 when training the LSTM parameter weights. The training set of experimental data uses the US daily gold settlement price from May 16, 2010 to May 16, 2018, a total of 2088 days, and the daily bitcoin settlement price from May 16, 2013 to May 2018 16 days of data, a total of 1826 days. Then use the period given in the question from September 11, 2018 to September 10, 2021 to verify.}
+	\paragraph{\ \ \ Since prices have different dimensions and dimensional units, such a situation will affect the results of data analysis. In order to eliminate the dimensional influence between prices, data standardization processing (such as normalization processing) needs to be performed to meet the needs of the comparability of data. Then, for the prices of gold and bitcoin, we use today's price/yesterday's price instead of today's price for subsequent predictions, which can make the data more impressive. }
+	
+	\subsubsection{Model 1:\ \ LSTM neural network}
+	\paragraph{(1)\ Definition of LSTM : }\cite{LSTM}\cite{LSTMLH}
+	
+	\paragraph{	\ \ \ LSTM is a recurrent neural network suitable for extracting temporal features from time series, with the ability to learn long-term time series dependencies. }
+	
+	\paragraph{(2)\ Structure of LSTM :}
+	
+	
+
+
+	\paragraph{LSTM can delete or add information, relying on the gate structure. A gate is a means of selectively passing information, and the gate consists of a sigmoid neural layer and a dot product unit. }
+	\begin{itemize}
+		\item Forget Gate:\ Determines how much of the unit state $C_{t-1}$ at the previous moment is saved to the current moment $C_{t}$.  
+		\begin{equation}
+			f_{t}=\sigma(W_{f}\cdot[h_{t-1},x_{t}]+b_{f})
+		\end{equation}
+		\item Input Gate:\ Determines how much of the network's input $x_{t}$ at the current moment is stored in the unit state $C_{t}$ . 
+		\begin{equation}
+			i_{t}=\sigma(W_{i}\cdot[h_{t-1},x_{t}]+b_{i})
+		\end{equation}
+		\begin{equation}
+			\widetilde C_{t}=tanh(W_{c}\cdot[h_{t-1},x_{t}]+b_{f})
+		\end{equation}
+		\item Output Gate:\ Control how much of the cell state $C_{t}$ is output to the current output value $h_{t}$ of LSTM .
+		\begin{equation}
+			o_{t}=\sigma(W_{o}\cdot[h_{t-1},x_{t}]+b_{o})
+		\end{equation}
+		\begin{equation}
+			h_{t}=o_{t}*tanh(C_{t})
+		\end{equation}
+		\item Cell Gate:\ Old state plus new candidate information.
+		\begin{equation}
+			C_{t}=f_{t}*C_{t-1}+i_{t}*\widetilde C_{t}
+		\end{equation}
+		
+		
+		
+	\end{itemize}
+	
+	
+	
+	\paragraph{(3)\ Training of LSTM: }
+	\begin{itemize}
+		\item The data used in the LSTM neural network should be the time series features of the time series data to be extracted. Set the window length to 30 days, the rolling window length to 1 day, and the forecast period to 3 days. This means that we will predict the stock price 3 days from now by looking at data from the previous 30 days, based on the current time of day each day. 
+		
+	\end{itemize}
+	
+	\begin{figure}[H]   % ht 表示here  top
+		\centering
+		\includegraphics[scale=0.5]{1.png}
+		\caption{Time Series Characteristics of Time Series Data}
+		\label{fig:label}
+	\end{figure}
+
+	\begin{itemize}
+		\item Input sequence step size (time step)\ \ :\ \ this parameter is the parameter that distinguishes the LSTM neural network model from other models. LSTM requires the input data to be the price when inputting the training data, and the input sequence step size is initially set to 3, that is The length of the loop unit, each time only predict the data for the next three days, and then use all the data to predict three days.
+		\item The number of neurons in the LSTM layer (LSTM units)\ \ : \ \  similar to other neural network models, the LSTM neural network also needs to define the number of neurons in each neural layer. In the definition, the shape of the input data should be considered, and the number of neurons in the LSTM layer should be slightly larger than the shape of the input data to ensure that the model can run normally, but it should not be set too large, otherwise it will affect the performance of the model. . Considering the above problems, because the number of factors we input is 1, the number of neurons in the LSTM layer is initially defined as 20.
+		\item Optimizer\ \ :\ \  The purpose of the optimizer is to minimize the loss function. Among all neural network optimizers, adam is the most commonly used optimizer, so the initial setting of the optimizer is adam.
+		\item Input data dimension (Input shape)\ \ :\ \  Because the title stipulates that only gold price/bitcoin price can be used for investment prediction, so the input data dimension is directly 1-dimensional
+	\end{itemize}
+
+	\subsubsection{Model 2:\ \ GREY MODEL}
+	\paragraph{(1)\ Definition of GREY MODEL : }\cite{GRAY}
+	\paragraph{\ \ \ The grey prediction model is a prediction method that establishes a mathematical model to make predictions through a small amount of incomplete information. It is based on the past and present development laws of objective things, with the help of scientific methods to describe and analyze the future development trends and conditions, and to form scientific assumptions and judgments. }
+	\paragraph{(2)\ GM(1,1) model establishment :}
+	\paragraph{\ \ \ In this article, the initial relevant factor is only one first-level indicator - the price of the transaction, and there is only one variable. Therefore, to use the GM(1,1) model is to use the first-order differential equation to establish a gray model for this variable. We use 30 days of initial data, assuming the initial data is }
+	\begin{equation}
+		x^{(0)}_{i} = (x^{(0)}_{i}(1),x^{(0)}_{i}(2),...,x^{(0)}_{i}(n))
+	\end{equation}
+	\paragraph{Among them, the data volume n=30\ ; i=1 represents a total of one variable\ ; the superscript (0) represents the initial value. }
+	\paragraph{For the original data that seems to be irregular, the cumulative generation method can be used to make the generated data change more continuously and closer to a specific function. }
+	\paragraph{Accumulate $x^{(0)}_{i}$ to weaken the volatility and randomness of the random sequence, and you can get a new sequence: }
+	\begin{equation}
+		x^{(1)}_{i}(k) = \sum_{m=1}^{n} x^{(0)}(m) ,(k=m,2,3,...,n)
+	\end{equation}
+	\paragraph{According to the above formula, the adjacent mean equal weight column of $x^{(1)}_{i}(k)$ is generated: }
+	\begin{equation}
+		z^{(1)}_{i}(k) = (z^{(1)}_{i}(2),z^{(1)}_{i}(3),...,z^{(1)}_{i}(k)),(k=2,3,...,n)
+	\end{equation}
+	\paragraph{And $z^{(1)}_{i}(k)=0.5x^{(1)}_{i}(k-1) +0.5x^{(1)}_{i}(k) , (k=2,3,...,n)$ . }
+	\paragraph{According to the grey prediction theory, establish a whitened first-order differential equation for $x^{(1)}_{i}$ with respect to t :}
+	\begin{equation}
+		\frac{dx^{(1)}_{i}}{dt}+a_{i}x^{(1)}=u_{i}
+	\end{equation}
+	\paragraph{Then $a_{i}$ and $u_{i}$ are the coefficients to be solved,which are called the development coefficient and the gray action respectively, and the effective interval of $a_{i}$ is (-2, 2).
+		And denote the matrix formed by $a_{i}$ and $u_{i}$ as the gray parameter $\overline a_{i} = \begin{bmatrix}a_{i} \\ u_{i}\end{bmatrix}$ . Only the parameters $a_{i}$ and $u_{i}$  are required to obtain $x^{(1)}_{i}(t)$, and then the predicted value of $x^{(0)}_{i}$ can be obtained.  }
+	\paragraph{The mean generation B and constant term vector for the cumulative generated data are: }
+	\paragraph{According to the least squares method, $\overline{a_{i}}$ can be obtained by: }
+	\begin{equation}
+		\overline{a_{i}} = (B^{T}B)^{-1}B^{T}Y_{m} 
+	\end{equation}
+	\paragraph{Bring the gray parameter $\overline{a_{i}}$ into $\frac{dx^{(1)}_{i}}{dt}+a_{i}x^{(1)}=u_{i}$ ,and solve $\frac{dx^{(1)}_{i}}{dt}+a_{i}x^{(1)}=u_{i}$,we get :}
+	\begin{equation}
+		\overline{x_{i}}^{(1)}(t+1)=(x_{i}^{(1)}-\frac{u_{i}}{a_{i}})e^{-a_{i}t}+\frac{u_{i}}{a_{i}}
+	\end{equation}
+	\paragraph{By accumulating and reducing the above results, the predicted value can be obtained: }
+	\begin{equation}
+		\overline{x_{i}}^{(0)} = (\overline{x_{i}}^{(0)}(1),\overline{x_{i}}^{(0)}(2),...,\overline{x_{i}}^{(0)}(n+1),...,\overline{x_{i}}^{(0)}(n+m))
+	\end{equation}
+	\paragraph{Then\ ,\ $\overline{x_{i}}^{(0)}(n+1),...,\overline{x_{i}}^{(0)}(n+m)$ are the predicted values. }
+	
+	\subsubsection{The results of prediction}
+	
+
+
+	
+
+	
+
+	
+	\begin{table}[h]
+		\centering
+		\caption{$R^2 error$}\label{cjd}
+		\begin{tabular}{|l|c|r|}
+			\hline
+			\  & Gold & Bitcoin \\
+			\hline
+			LTSM & 0.99 & 0.93 \\
+			\hline
+			Grey & 0.95 & 0.90\\
+			\hline
+		\end{tabular}
+	\end{table}
+	
+	
+
+	\paragraph{
+		\ \ \ Table 1 shows the forecast errors of the two models for the two investment currencies.
+	}
+	
+	\paragraph{
+		It is not difficult to find that the prediction accuracy of the LSTM-based price prediction model for both gold and BTC is higher than that of the gray prediction model.
+	}
+	
+	\paragraph{
+		So we use the prediction results obtained by the LTSM model to complete the next work
+	}
+	
+	\subsubsection{Model comparison and model selection}
+
+	\paragraph{
+		\ \ \ From the results of the above two models, the price prediction model based on LSTM has a prediction accuracy rate of 99\% in gold and 93\% in BTC.However, the price prediction model based on the gray prediction model has an accuracy rate of 95\% on gold and 90\% on BTC, so the price prediction model based on LSTM is better.Among them, the neural network machine learning algorithm
+		It is widely used due to its high self-learning habit, stability, and abstraction
+		Simulation capability. Compared to mathematical models in statistics and econometrics,
+		Neural networks are better at predicting financial time series.
+	}
+	
+	
+	
+	\paragraph{
+		\ \ \  To sum up, we choose the price prediction model based on LSTM.
+	}
+	
+	\subsection{dynamic programming model}\cite{DTGH}
+	
+	\subsubsection{Model assumptions}
+	
+	
+	
+	
+	\paragraph{
+		\ \ \ According to the question, on every single trading day, we have all the data up to yesterday, and now we expect to find a trading strategy to gain high profits. Tomorrow, we will include today's data onto the historical data and forecast backward again. This is a typical dynamic programming process, so we formulate the trading strategy of the day through the previous prediction results, and then continue to recurse to obtain the trading strategy and accumulated profits until Sept 16th, 2021.
+	}
+	
+
+	\paragraph{
+	\ \ \ To quantify the relationship between daily investment risk and return more intuitively,\cite{LHJY} the Sharpe ratio is introduced here. The Sharpe ratio is proposed by William F. Sharpe based on modern portfolio theory. It not only pays attention to the return of assets but also pays attention to the risk of assets. It measures the return of assets after adjusting the risk and is the price display of unit risk. Since the Sharpe ratio comprehensively reflects the risk-return characteristics of the capital market, it has been widely used in evaluating the performance of asset portfolios, judging the operating efficiency of the capital market, constructing effective asset portfolios, and guiding investment decisions. Its mathematical expression is:
+	}
+	
+	\begin{equation}
+		SR_{p} = \frac{E(r_{p})-r_{f}}{\sigma_{p}}
+	\end{equation}
+
+	\subsubsection{Model building}
+	
+	\paragraph{
+		\ \ \ During the observation period,
+		$E(r_{p})$\ represents the expected rate of return on portfolio p, \ $\sigma_{p}$\ represents the standard deviation of the rate on portfolio p, \ $r_{f}$\ represents the rate of return of the risk-free asset during the observation period.
+	}
+	
+	\paragraph{
+		\ \ \ With the proposal of facilitating the calculation of the dynamic programming model in the following process, we assume that the three items in triple\ $ [c_{k}, g_{k}, b_{k}] $\ are the proportion of the equivalent value of cash, gold, and bitcoin held in the total assets held on day \ $k$, so we have the relational expression
+	}
+	
+	\begin{equation}
+		c_{k}+g_{k}+b_{k}=1
+	\end{equation}
+	
+	\paragraph{
+		\ \ \ The decision variable is two-tuple \ $ [\bigtriangleup G_{k}, \bigtriangleup B_{k}] $, which is the Variation in the proportion of gold and the proportion of bitcoin. Let’s assume that the increase of cash, gold, and bitcoin on day \ $ k $ are \ $ [2\%, \overline{G_{k}}, \overline{B_{k}} ]$, respectively. According to the prediction results, on day k, we will get the data of the kth day and the forecast value of day\ $ k+1$, day\ $ k+2$, day\ $ k+3$.
+	}
+	
+	\paragraph{
+		\ \ \ According to the dynamic programming model in section4.3.1, on day\ $k$, the objective function\ $f(k)$ is set to the Sharpe value of day\ $k+3$ when the position is adjusted today and the next three days remain unchanged. When this objective function reaches the maximum, the risk and the return also reach a balanced state.
+	}
+	
+	\paragraph{
+		\ \ \ Taking day\ $k$ as an example, the proportion of cash, gold, and bitcoin in the total assets is\ $[c_{k}, g_{k}, b_{k}]$. At the end of the day \ $k$, First calculate the growth rate. If the growth rate of cash, gold, and bitcoin on that day is\ $[(1+2\%)c_{k}, \overline{G_{k}}, \overline{B_{k}}]$ . The ratio will change to\ $[(1+2\%)c_{k}, (1+\overline{G_{k}})g_{k}, (1+\overline{B_{k}})b_{k}]$ , because the total holding amount has changed. The sum of the ratios here may no longer add up to 100\%. After all changes on day \ $k$ are completed, re-normalization will be performed in order to perform day\ $k+1$ repeat operation . The transaction will be performed again to adjust the position and settle the transaction fee.
+	}
+	
+	\paragraph{
+		\ \ \ When only the transaction of buying gold occurs, record the change in the proportion of gold amount as \ $\bigtriangleup G_{k} > 0$. At this time, the change in the proportion of cash is \ $ \frac{\bigtriangleup G_{k}}{0.99}$. When only the transaction of selling gold is required, record the change of the gold amount as  $\bigtriangleup G_{k} < 0$. Now, the change of the cash ratio is $0.99 \times \bigtriangleup G_{k} $. When only the purchase of bitcoins is required, record the change in the proportion of the bitcoin amount as $\bigtriangleup B_{k} > 0$. And at this time, the change in the proportion of cash is \ $ \frac{\bigtriangleup B_{k}}{0.98}$. When only the transaction of selling bitcoin occurs, record the amount of change in the bitcoin amount as 1.0204. The amount of change is\ $\bigtriangleup B_{k} < 0$, at this time, the amount of change in cash ratio is \ $0.98\times \bigtriangleup B_{k}$.
+	}
+	
+	\paragraph{
+		After the transaction fee settlement is completed,it is clear that that the final day's cash, gold, and bitcoin share of the total assets is
+	}
+	
+	\begin{equation}
+		[(1+2\%)c_{k} - (1 \pm 0.01)\bigtriangleup G_{k}-(1 \pm 0.02)\bigtriangleup B_{k}, (1+\overline{G_{k}})g_{k} + \bigtriangleup G_{k}, (1+\overline{B_{k}})b_{k} + \bigtriangleup B_{k}]
+	\end{equation}
+	
+	\paragraph{
+		Then we normalize the data,multiply the sum of the three proportions by day\ $k-1$'s total amount to get day\ $k$'s total amount and rate of return, as well as the proportion of cash, gold, and bitcoin in day \ $k$'s total assets.
+	}
+	
+
+
+	
+	\subsubsection{Dynamic Programming Model Results}
+	
+	\paragraph{
+		\ \ \ According to the above model process, when the Sharpe ratio on the third day is used as the objective function to take the maximum value, we can obtain 1237.22 for the final \$1,000. The specific investment plan can be found in the appendix.
+	}
+		
+	\subsubsection{Model Improvements}
+	
+	\paragraph{
+		\ \ \ When the Sharpe ratio was used as the objective function in the above model because the investment strategy was too conservative, as much as possible is invested in gold, and Bitcoin was not selected. This is because Bitcoin is different from traditional financial projects, and its daily fluctuations. Its range is higher, the variance will be larger, and the Sharpe ratio will reject such a big risk. Therefore, the final rate of return is not high\cite{PSO}.
+		In fact, for investors, different personalities will lead to different investment strategies. In addition to using a single Sharpe ratio as the objective function, we can also use other methods to characterize different people's mental expectations of risks and returns. We Set three types of people as aggressive (without considering the existence of risk), stable (with Sharpe ratio as the objective function), and intermediate (think that risk and return have other weights), and formulate different investment plans for them.
+	}
+	
+	\paragraph{
+		\ \ \ We use the standard deviation of the predicted value in the next three days as the risk assessment value. If the predicted price fluctuation in the next three days is relatively large, it means that the future risk is relatively large.
+		When the model was established, for the aggressive personality, we set the objective function to maximize the gain after three days, for the stable personality, we still set the objective function to maximize the Sharpe rate after three days, and finally, for the intermediate type Personality, we set the objective function to be the gain after three days minus 0.8 times the risk assessment value.
+	}
+		.
+	\paragraph{
+		\ \ \ Finally, the investment plan and daily rate of return can be found in the appendix. In the end, the total investment value of the aggressive type is 20560265.49, the total investment value of the stable type is 1237.22, and the total investment value of the intermediate type is 4253.99.
+	}
+
+	\subsection{Sensitivity Analysis }
+	
+	\subsubsection{The evidence of optimal scheme}
+	
+	\paragraph{
+		\ \ \ We directly use the mean of all local objective functions $f_{k}$ as the overall objective function. To prove that the solution we choose is the local optimal solution, we can consider a certain disturbance to the result, and explain that the result after disturbance is no longer the The maximum value of the objective function. Specifically, for our above-mentioned gold and bitcoin buying and selling plan, we added a 5\% range of volatility, and re-planned the buying and selling plan. The results of multiple experiments are in table \ref{t2}: 
+	}
+	
+	\begin{table}[H]
+		\centering
+		\caption{The buy and sell plan incorporates a 5\% range of volatility}\label{t2}
+		\begin{tabular}{|l|c|c|c|c|c|c|c|c|c|}
+			\hline
+			\  & 1(no disturbance) & 2	 &	 3 	&4		 & 			5& 		6 & 7	 & 8	 \\
+			\hline
+			returns & 4254.0 	& 4014.2 & 4328.0 & 4099.5 & 4303.1 &	4248.7& 4103.0 & 4235.4 \\
+			\hline
+			std		 & 1112.5 	& 1123.8 & 1182.5 & 1146.4 & 1175.4 & 1164.9 & 1137.0 & 1114.5 \\
+			\hline
+			sharpen & 3.82 	& 3.66		&3.58		&3.66	& 3.58	& 3.67	& 3.64	& 3.61	 \\
+			\hline
+		\end{tabular}
+	\end{table}
+	
+	\paragraph{
+		\ \ \ It can be seen that the final result is not as good as the original plan. Therefore, the investment plan we choose is the local optimal value, which is effective.
+	}
+	
+	\subsubsection{Determine how sensitive the strategy is to transaction costs}
+	
+	\paragraph{
+		\ \ \ In order to examine the strategy we sought before, what kind of changes will occur when the transaction cost changes, we adjust the parameters a\_gold and a\_bit. In order to invest more scientifically, we use the objective function of intermediate investors to invest, and get the table above \ref{t3}: 
+	}
+	
+	\begin{table}[H]
+		\centering
+		\caption{Investment solutions for intermediate investors}\label{t3}
+		\begin{tabular}{|l|c|c|c|c|c|c|c|}
+			\hline
+			a\_gold  & 1\% & 1.50\%	 &	0.50\% 	&1\%		&  1\% &	0.5\% & 	2\% \\
+			\hline
+			a\_bit 	& 2\% 	& 2\% 	& 2\%		 & 1.50\% & 2.50\% &	1\% & 4\%  \\
+			\hline
+			returns		 & 4240.9 	& 4250.7 & 3992.1 & 5655.8 & 2787.1 & 5918.3 & 4091.1  \\
+			\hline
+			std 		& 1171.8     & 1089.7 &1059.3 & 1306.5 & 825.9  & 1440.2 & 928.7 \\
+			\hline
+			g\_tans\_times(>=1) & 118	& 65		& 238		& 122	& 90	& 285	& 50		 \\
+			\hline
+		\end{tabular}
+	\end{table}
+	
+	\begin{itemize}
+		\item a\_gold, a\_bit: the ratio of fees between gold and bitcoin
+		\item returns: final benefit
+		\item std: global standard deviation (can be omitted)
+		\item g\_tans\_times: the number of changes in gold transactions
+		\item bit\_trans\_times: the number of changes in bitcoin transactions
+	\end{itemize}
+
+	\paragraph{
+		\ \ \ We can see that as the fee increases, the number of large-value transactions of gold and Bitcoin decreases significantly, and the final value decreases. As the fee becomes lower, the number of large-value transactions of gold and Bitcoin is significantly more, the ultimate value realization rises. 
+	}
+	
+	\section{Evaluation of the model }
+	\subsection{Advantages of the model}
+	\begin{itemize}
+		\item It has certain advantages in sequence modeling problems and has long-term memory function. Simple to implement.
+		\item Solve the problem of gradient disappearance and gradient explosion in the long sequence training process.
+	\end{itemize}
+	\subsection{Weaknesses of the model}
+	\begin{itemize}
+		\item The gradient problem of RNN has been solved to a certain extent in LSTM and its variants, but it is still not enough. It can handle sequences of the order of 100, but it can still be tricky for sequences of the order of 1000, or longer.
+		\item Time consuming to calculate. Each LSTM cell means that there are 4 fully connected layers (MLP). If the time span of the LSTM is large and the network is very deep, this calculation will be very large and time-consuming.
+	\end{itemize}
+	
+	\section{Improvement of model}
+	\paragraph{\ \ \ Restricted by the subject conditions, when training the LSTM neural network, we can only use the price data of gold and bitcoin before today for training, but some training results do not have very realistic reference value. Because in the real operation process , we can calculate the model and predict the results from more data in the past, including more features such as opening price, closing price, total transaction share, etc. to make more accurate predictions. Since we use the particle swarm optimization algorithm to speed up the planning The convergence of the model, but at the same time, the encoding method of floating-point numbers has also been changed, so the output results will be unavoidable for micro-operations with small amplitudes. Therefore, in the actual operation process in the future, we will also conduct more reasonable transaction amounts. }
+	
+	\newpage
+	\section{Memorandum}
+	DATE: February 22\\
+	TO:All Staff\\
+	FROM: TEAM 2212242\\
+	SUBJECT: Price Prediction and Quantitative Trading Strategy Based on LSTM Neural Network\\
+	
+	
+	% 引用文献 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	\newpage
+	\section{References}
+	\bibliography{yy}      % 指定article 代表同目录下的article.bib文件 
+	\bibliographystyle{ieeetr}  % 定义文献引用的格式
+	
+	
+	
+	
+	
+	
+	
+	
+	\newpage
+	% 附录 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	\begin{appendices}
+		\section{ }
+		
+
+
+	\end{appendices}
+\end{document}
